@@ -1,0 +1,29 @@
+{
+  "samples": [
+    {
+      "width": 1440,
+      "z": -24.5,
+      "marineTriangles": 220666,
+      "marineCalls": 87
+    },
+    {
+      "width": 1440,
+      "z": -42.5,
+      "marineTriangles": 96104,
+      "marineCalls": 55
+    },
+    {
+      "width": 390,
+      "z": -24.5,
+      "marineTriangles": 108998,
+      "marineCalls": 29
+    },
+    {
+      "width": 390,
+      "z": -42.5,
+      "marineTriangles": 90984,
+      "marineCalls": 27
+    }
+  ],
+  "allRootsRemoved": true
+}

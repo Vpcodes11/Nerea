@@ -1,0 +1,53 @@
+{
+  "title": "Ocean crag",
+  "asset": "boulder_01",
+  "author": {
+    "Rico Cilliers": "All"
+  },
+  "source": "https://polyhaven.com/a/boulder_01",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://polyhaven.com/license",
+  "creativeCommons": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "apiFiles": "https://api.polyhaven.com/files/boulder_01",
+  "sourceFiles": {
+    "include": {
+      "textures/boulder_01_nor_gl_2k.jpg": {
+        "size": 4649207,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/boulder_01/boulder_01_nor_gl_2k.jpg",
+        "md5": "73ee1783fca7605fd454f0af3e5b85fa"
+      },
+      "textures/boulder_01_diff_2k.jpg": {
+        "size": 3672483,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/boulder_01/boulder_01_diff_2k.jpg",
+        "md5": "63571077317c9a2d1db95894e0268a07"
+      },
+      "boulder_01.bin": {
+        "size": 2938808,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/boulder_01/boulder_01.bin",
+        "md5": "27a19fa031d8b4c3a09261f19c444dc5"
+      },
+      "textures/boulder_01_arm_2k.jpg": {
+        "size": 2273068,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/boulder_01/boulder_01_arm_2k.jpg",
+        "md5": "94c796dfd73f72b11e557cb2c05ff51e"
+      }
+    },
+    "size": 2773,
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/boulder_01/boulder_01_2k.gltf",
+    "md5": "3ef4b3c88c898e12b096eeb40f1edbb9"
+  },
+  "preparation": "18,000 triangles; Meshopt compression; 2048px WebP base color, OpenGL normal and ORM. Occlusion red channel connected. Prepared using scripts/prepare-model-rock.mjs.",
+  "runtime": "/models/ocean-crag.glb",
+  "variants": {
+    "detailed": {
+      "path": "/models/ocean-crag.glb",
+      "triangles": 18000,
+      "textureSize": 2048
+    },
+    "distant": {
+      "path": "/models/ocean-crag-lod.glb",
+      "triangles": 4000,
+      "textureSize": 1024
+    }
+  }
+}

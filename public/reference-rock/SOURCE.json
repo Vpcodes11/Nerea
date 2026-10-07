@@ -1,0 +1,57 @@
+{
+  "referenceSite": "https://organimo.com/",
+  "purpose": "Match the reference opening rock's actual geometry, diffuse surface, and proportions, as explicitly requested by the user.",
+  "retrieved": "2026-10-07",
+  "license": "Ownership remains with the reference site's rights holders. These reference assets are not represented as original or CC0 assets.",
+  "files": {
+    "mountain.glb": "https://organimo.com/wp-content/themes/organimo/public/webgl/models/mountain.glb",
+    "mount_diffuse.1001.ktx2": "https://organimo.com/wp-content/themes/organimo/public/webgl/textures/mountain/mount_diffuse.1001.ktx2",
+    "mount_diffuse.1002.ktx2": "https://organimo.com/wp-content/themes/organimo/public/webgl/textures/mountain/mount_diffuse.1002.ktx2",
+    "space-v11.hdr": "https://organimo.com/wp-content/themes/organimo/public/webgl/textures/space-v11.hdr"
+  },
+  "model": {
+    "name": "mountain",
+    "mesh": "mount_low.001",
+    "vertices": 33894,
+    "triangles": 64383,
+    "extensionsUsed": [],
+    "boundsMin": [-1.7034648656845093, 0.0074467440135777, -1.4473296403884888],
+    "boundsMax": [1.2704952955245972, 2.389612913131714, 0.893440842628479],
+    "position": [0, -2.4291, 0],
+    "quaternion": [0, 0, 0, 1],
+    "scale": [1, 1, 1]
+  },
+  "diffuseAtlases": {
+    "dimensions": [2048, 2048],
+    "mipLevels": 12,
+    "flipY": false,
+    "wrapS": "ClampToEdgeWrapping",
+    "wrapT": "ClampToEdgeWrapping",
+    "selection": "uv.x < 1.0 samples mount_diffuse.1001 at uv; uv.x >= 1.0 samples mount_diffuse.1002 at uv - vec2(1.0, 0.0)"
+  },
+  "material": {
+    "lightingEnvironmentDimensions": [1536, 768],
+    "lighting": "Baked diffuse RGB plus fully blurred HDR radiance times 0.5, clamped to 1.0",
+    "viewNormalRotationRadians": 0.7,
+    "toneMapping": "none",
+    "directLights": false,
+    "fog": false,
+    "diffuseColorSpace": "raw reference RGB without color conversion"
+  },
+  "referenceCamera": {
+    "position": [-0.38374, 0, -4.80799],
+    "target": [-0.17507, -0.19783, -0.21144],
+    "focalLength": 100,
+    "filmGauge": 100,
+    "localXTranslate": -0.2,
+    "near": 0.1
+  },
+  "referenceJar": {
+    "sourceInspectedForDimensionsOnly": "https://organimo.com/wp-content/themes/organimo/public/webgl/models/jar.glb",
+    "position": [0.01841, 0.07231, -0.46816],
+    "quaternion": [0.02526, 0.07009, 0.00207, 0.99722],
+    "scale": [1, 1, 1],
+    "boundsMin": [-0.4870914816856384, -0.5857566595077515, -0.45850828289985657],
+    "boundsMax": [0.4831719696521759, 0.5712448954582214, 0.4563700258731842]
+  }
+}

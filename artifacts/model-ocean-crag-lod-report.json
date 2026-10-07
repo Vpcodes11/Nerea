@@ -1,0 +1,43 @@
+{
+  "output": "/models/ocean-crag-lod.glb",
+  "sizeBytes": 940008,
+  "originalTriangles": 66122,
+  "triangles": 4000,
+  "bounds": {
+    "min": [
+      -0.7456479320543005,
+      -0.07265606635591015,
+      -0.9484404921531677
+    ],
+    "max": [
+      0.5231553564088537,
+      0.9300412099935673,
+      0.8803128004074097
+    ]
+  },
+  "dimensions": [
+    1.2688032884631542,
+    1.0026972763494775,
+    1.8287532925605774
+  ],
+  "textures": [
+    {
+      "name": "boulder_01_nor_gl",
+      "format": "image/webp",
+      "bytes": 417668
+    },
+    {
+      "name": "boulder_01_diff",
+      "format": "image/webp",
+      "bytes": 328366
+    },
+    {
+      "name": "boulder_01_rough",
+      "format": "image/webp",
+      "bytes": 119884
+    }
+  ],
+  "decoder": "Three.js MeshoptDecoder from three/addons/libs/meshopt_decoder.module.js",
+  "source": "https://polyhaven.com/a/boulder_01",
+  "license": "CC0 1.0 Universal"
+}
