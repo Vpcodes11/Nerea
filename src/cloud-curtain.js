@@ -59,9 +59,9 @@ export function buildCloudCurtain(scene) {
       }
 
       void main() {
-        if (cameraVisible < .5 || progress <= .10 || progress >= .9999) discard;
+        if (cameraVisible < .5 || progress <= .10 || progress >= 1.5) discard;
         float arrival = smoothstep(.10, .88, progress);
-        float departure = smoothstep(.94, 1., progress);
+        float departure = smoothstep(1.10, 1.50, progress);
         float life = smoothstep(.10, .76, progress) * (1. - departure);
         float drift = time * .004;
         // Ten distinct, overlapping masses sweep in from both sides and below.
@@ -81,11 +81,11 @@ export function buildCloudCurtain(scene) {
 
         // An opaque, textured interior guarantees no world pixels leak through
         // at the end of the approach, including the corners of ultrawide views.
-        float interior = smoothstep(.80, .88, progress) * (1. - smoothstep(.94, .99, progress));
+        float interior = smoothstep(.80, .88, progress) * (1. - smoothstep(1.10, 1.48, progress));
         float radius = length((vUv - vec2(.5)) * vec2(aspect, 1.));
-        float opening = smoothstep(.94, .999, progress);
+        float opening = smoothstep(1.10, 1.50, progress);
         float clearCenter = 1. - smoothstep(opening * 1.3 - .15, opening * 1.3 + .18, radius);
-        interior *= 1. - clearCenter * smoothstep(.94, .965, progress);
+        interior *= 1. - clearCenter * smoothstep(1.10, 1.36, progress);
         float alpha = max(texturedAlpha, interior);
         if (alpha < .002) discard;
 
@@ -99,7 +99,7 @@ export function buildCloudCurtain(scene) {
         float depthShade = clamp(.57 + broad * .25 + detail * .13 + grain * .09, .52, 1.0);
         float relief = (a + c + e + g + i) / max(density, .001);
         depthShade *= mix(.82, 1.03, relief);
-        vec3 cloudColor = mix(night, dawn, smoothstep(.48, .99, progress));
+        vec3 cloudColor = mix(night, dawn, smoothstep(.48, 1.40, progress));
         cloudColor *= depthShade;
         cloudColor += vec3(.045, .039, .043) * smoothstep(.3, .95, broad) * (1. - grain * .4);
         gl_FragColor = vec4(cloudColor, alpha);
@@ -125,10 +125,10 @@ export function buildCloudCurtain(scene) {
     update(progress, time, aspect = 1, camera) {
       if (disposed) return;
       if (camera) mainCamera = camera;
-      uniforms.progress.value = THREE.MathUtils.clamp(progress, 0, 1);
+      uniforms.progress.value = THREE.MathUtils.clamp(progress, 0, 1.5);
       uniforms.time.value = time;
       uniforms.aspect.value = Math.max(.25, aspect);
-      mesh.visible = Boolean(uniforms.cloudMask.value) && progress > .10 && progress < .9999;
+      mesh.visible = Boolean(uniforms.cloudMask.value) && progress > .10 && progress < 1.5;
     },
     captureDepth(hide) {
       if (hide) {

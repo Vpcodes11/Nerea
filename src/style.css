@@ -180,6 +180,9 @@ html:has(body.is-home){scrollbar-color:#9a8c9e #171429;scrollbar-width:thin}
 .is-home .promise .ocean-note p{font-size:8px;letter-spacing:.13em;margin-bottom:12px}
 .is-home .promise .ocean-note .text-link{font-size:9px;justify-content:flex-end}
 .is-home .promise .center-copy,.is-home .promise .ocean-note{z-index:1}
+.is-home .promise .center-copy,.is-home .promise .ocean-note{transform:translateY(var(--frame-offset,0px))}
+.is-home:has(.world.in-cloud) .site-header,.is-home:has(.world.in-cloud) .journey-controls{color:#49434a}
+.is-home:has(.world.in-cloud) .ambient-controls button{color:#49434a}
 @media(max-width:760px){.is-home .promise .chapter-frame:before{content:none}.world:after{z-index:2;background:linear-gradient(0deg,rgb(223 217 208 / var(--shore-shade,0)) 0%,rgb(223 217 208 / calc(var(--shore-shade,0)*.72)) 62%,transparent 100%),radial-gradient(ellipse at 55% 35%,transparent 45%,rgba(4,7,16,.15) 100%)}.poster-render .world:after{display:none}}
 body.is-home:has(.world[data-chapter="1"]) .site-header,body.is-home:has(.world[data-chapter="3"]) .site-header{color:#49434a}
 body.is-home:has(.world[data-chapter="1"]) .wordmark,body.is-home:has(.world[data-chapter="3"]) .wordmark{color:#49434a}

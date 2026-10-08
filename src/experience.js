@@ -117,7 +117,8 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
     camera.position.copy(pose);camera.position.x+=still?0:pointer.x*(mobile()?.18:.50);camera.position.y+=still?0:pointer.y*(mobile()?.10:.22);camera.lookAt(target);
     if(!still){const breath=1-smooth(v/.85);camera.position.x+=Math.sin(time*.18)*.08*breath;camera.position.y+=Math.sin(time*.22)*.035*breath;camera.lookAt(target);}
     const day=smooth(v/.85),under=smooth((-.65-camera.position.y)/1.2);
-    const cloudCover=still?0:smooth((progress-.80)/.08)*(1-smooth((progress-.94)/.05));
+    const cloudCover=still?0:smooth((progress-.80)/.08)*(1-smooth((progress-1.10)/.40));
+    container.classList.toggle('in-cloud',!still&&progress>.62&&progress<1);
     container.style.setProperty('--arrival-shade',String((1-smooth(v/.85))*(1-cloudCover)));
     container.style.setProperty('--shore-shade',String(smooth(v/.85)*(1-smooth((v-1.05)/.6))*(1-cloudCover)));
     sky.position.copy(camera.position);skyMaterial.uniforms.day.value=day;skyMaterial.uniforms.under.value=under;
@@ -134,12 +135,15 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
     marine?.update(still?0:time,under,day,camera,still?0:progress);
     frames.forEach((frame,i)=>{
       const l=progress-i;
-      const opacity=still?1:i===0?1-smooth((progress-.32)/.36):i>1&&progress<1?0:(i===1?smooth((progress-.955)/.045):1)*(i===3?1:1-smooth((l-.32)/.38));
+      if(i===1){const shift=`${Math.max(0,scrollY-(offsets[i].top+offsets[i].height-innerHeight))}px`;if(frame.style.getPropertyValue('--frame-offset')!==shift)frame.style.setProperty('--frame-offset',shift);}
+      const entrance=i===1?smooth((progress-1.18)/.34):1;
+      const exit=i===1?1-smooth((l-.80)/.18):i===3?1:1-smooth((l-.32)/.38);
+      const opacity=still?1:i===0?1-smooth((progress-.32)/.36):i>1&&progress<1?0:entrance*exit;
       frame.style.setProperty('--copy-opacity',opacity);
       frame.inert=!still&&opacity<.002;
       // Keep focused copy from appearing through the opaque bank. Focus remains
       // available once its chapter has been revealed.
-      frame.classList.toggle('cloud-concealed',!still&&(i===0?progress>=.68&&progress<1:progress<1));
+      frame.classList.toggle('cloud-concealed',!still&&(i===0?progress>=.68&&progress<1.5:progress<1.18));
     });
     if(studio){sky.visible=stars.visible=water.visible=ceiling.visible=false;scene.background=new THREE.Color('#ddd4dd');scene.fog=null;assets.capsule.visible=assets.sculpture.visible=false;assets.bottle.position.set(0,-1.65,0);assets.bottle.scale.setScalar(1.35);assets.bottle.rotation.set(.025,-.05,-.10);camera.position.set(0,0,8);camera.lookAt(0,0,0);}
     renderer.info.reset();reflectionCalls=0;forceReflection=still;let depthCalls=0;
