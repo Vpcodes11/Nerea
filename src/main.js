@@ -123,7 +123,7 @@ function render() {
     const fallback = () => { if (!container.isConnected) return; container.classList.add('static-world'); document.querySelector('#load-status').textContent = 'Static ocean view ready.'; document.querySelector('.scene-status')?.classList.add('ready'); document.body.classList.add('static-mode'); document.querySelectorAll('.feature-story').forEach(p=>{p.hidden=false;p.removeAttribute('aria-hidden');}); openingEntry?.complete(true); };
     if (new URLSearchParams(location.search).get('view') === 'static') fallback();
     else {
-      const timeout = setTimeout(fallback, 6000);
+      const timeout = setTimeout(fallback, 18000);
       Promise.all([document.fonts.ready, import('./experience.js')]).then(([, { createWorld }]) => {
         if (!container.isConnected) { clearTimeout(timeout); return; }
         openingEntry?.update(22, 'Shaping the water');
