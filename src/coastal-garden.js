@@ -1,230 +1,137 @@
 import * as THREE from 'three';
-import {mergeGeometries, mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
-// An authored shore specimen: forked wrack attached to rocks at the tidal edge.
+// A hand-shaped seaweed herbarium, built from individual cut blades instead of an image plane.
 export function buildCoastalGarden(scene, stoneMaterial) {
   const rootGroup = new THREE.Group();
-  rootGroup.name = 'Coastal bladderwrack garden';
+  rootGroup.name = 'Tidal herbarium';
   scene.add(rootGroup);
-  const geometries = new Set(), materials = new Set(), plants = [];
-  let seed = 21749, disposed = false, depthHidden = false, portraitWasVisible = true, portraitLoaded = false;
+  const geometries = new Set(), materials = new Set(), specimens = [];
+  let seed = 38471, disposed = false;
   const random = () => ((seed = seed * 16807 % 2147483647) - 1) / 2147483646;
-  const ownGeometry = g => { geometries.add(g); return g; };
-  const ownMaterial = m => { materials.add(m); return m; };
-  const clock = {value: 0};
-
-  const leafMaterial = ownMaterial(new THREE.MeshPhysicalMaterial({
-    color: '#d8d7ce', roughness: .60, metalness: .015,
-    clearcoat: .17, clearcoatRoughness: .48, side: THREE.DoubleSide,
-    vertexColors: true
-  }));
-  leafMaterial.onBeforeCompile = shader => {
-    shader.uniforms.shoreTime = clock;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float shoreTime;\nattribute float shoreFlex;\nvarying vec2 shoreUV;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nshoreUV=uv;\ntransformed.z+=sin(shoreTime*.31+position.y*1.8+position.x*.8)*.055*shoreFlex;\ntransformed.x+=sin(shoreTime*.23+position.y*1.4)*.025*shoreFlex;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 shoreUV;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat grain=sin(shoreUV.y*115.+sin(shoreUV.x*47.)*2.5)*sin(shoreUV.x*63.)*.027;\nfloat midrib=exp(-pow((shoreUV.x-.5)*35.,2.));\nfloat edge=pow(abs(shoreUV.x-.5)*2.,6.);\ndiffuseColor.rgb*=1.+grain-midrib*.12-edge*.07;');
-  };
-  const vesicleMaterial = ownMaterial(new THREE.MeshPhysicalMaterial({
-    color: '#ada591', roughness: .49, metalness: .015,
-    clearcoat: .25, clearcoatRoughness: .39, vertexColors: true
-  }));
-  vesicleMaterial.onBeforeCompile = shader => {
-    shader.uniforms.shoreTime = clock;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float shoreTime;\nattribute float shoreFlex;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.z+=sin(shoreTime*.31+position.y*1.8+position.x*.8)*.055*shoreFlex;\ntransformed.x+=sin(shoreTime*.23+position.y*1.4)*.025*shoreFlex;');
-  };
-
-  // The support rocks sit mostly below the water; the blades grow from their crest.
-  const rockGeometry = ownGeometry(mergeVertices(new THREE.IcosahedronGeometry(1, 3)));
-  const rp = rockGeometry.attributes.position;
-  for (let i = 0; i < rp.count; i++) {
-    const x = rp.getX(i), y = rp.getY(i), z = rp.getZ(i);
-    const n = 1 + Math.sin(x*5.3+z*3.1)*Math.cos(y*4.1)*.105 + Math.sin(z*10.4-y*5.7)*.036;
-    rp.setXYZ(i, x*n, y*n, z*n);
+  const keepGeometry = geometry => (geometries.add(geometry), geometry);
+  const keepMaterial = material => (materials.add(material), material);
+  const stone = keepMaterial(stoneMaterial?.clone() || new THREE.MeshStandardMaterial());
+  stone.color.set('#5d6460');
+  stone.roughness = .98;
+  const stoneGeometry = keepGeometry(new THREE.IcosahedronGeometry(1, 3));
+  const position = stoneGeometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const grain = 1 + Math.sin(x * 8.1 + z * 4.7) * .06 + Math.sin(y * 13.4 - z * 7.3) * .025;
+    position.setXYZ(i, x * grain, y * grain, z * grain);
   }
-  rockGeometry.computeVertexNormals();
-  const rockMaterial = ownMaterial(stoneMaterial?.clone() || new THREE.MeshStandardMaterial({roughness:.92}));
-  rockMaterial.color.set('#999389');
-  rockMaterial.roughness = .88;
-  const rockSpecs = [
-    [[3.65,-1.13,-22.6],[1.65,.92,1.30],.22],
-    [[5.03,-1.20,-23.75],[1.09,.72,.98],-.61],
-    [[2.48,-1.18,-20.95],[.91,.63,.79],1.08]
-  ];
-  rockSpecs.forEach(([position,scale,rotation]) => {
-    const rock = new THREE.Mesh(rockGeometry,rockMaterial);
-    rock.position.set(...position); rock.scale.set(...scale);
-    rock.rotation.set(.10,rotation,-.07);
+  stoneGeometry.computeVertexNormals();
+  for (const [xyz, scale, yaw] of [
+    [[3.45,-1.14,-22.5],[1.56,.68,1.1],-.3],
+    [[4.72,-1.27,-23.35],[1.10,.43,.95],.7],
+    [[2.48,-1.39,-21.12],[.74,.39,.70],1.1]
+  ]) {
+    const rock = new THREE.Mesh(stoneGeometry, stone);
+    rock.position.set(...xyz); rock.scale.set(...scale); rock.rotation.y = yaw;
     rock.castShadow = rock.receiveShadow = true;
     rootGroup.add(rock);
-  });
+  }
 
-  const palette = ['#706f53','#646950','#7c7556','#5c6350','#8b8264'].map(c => new THREE.Color(c));
-  const vesicleGeometry = new THREE.SphereGeometry(1,10,7);
-  const up = new THREE.Vector3(0,1,0), matrix = new THREE.Matrix4(), quaternion = new THREE.Quaternion();
+  const pigments = ['#625f42','#767052','#4d5d53','#898064','#575942'];
+  const bladeMaterial = keepMaterial(new THREE.MeshStandardMaterial({
+    vertexColors:true, side:THREE.DoubleSide, roughness:.83, metalness:.025
+  }));
+  const stemMaterial = keepMaterial(new THREE.MeshStandardMaterial({color:'#454b3c',roughness:.92}));
+  const holdfastMaterial = keepMaterial(new THREE.MeshStandardMaterial({color:'#3b453b',roughness:.95}));
+  const bladderMaterial = keepMaterial(new THREE.MeshStandardMaterial({color:'#8e825d',roughness:.68}));
+  const bladderGeometry = keepGeometry(new THREE.SphereGeometry(1,8,6));
 
-  function makePlant(x,y,z,height,lean,phase,colourIndex) {
-    const plant = new THREE.Group();
-    plant.position.set(x,y,z);
-    plant.rotation.y = phase;
-    const blades = [], vesicles = [];
-    const colour = palette[colourIndex].clone();
-    function branch(start, angle, length, width, depth, twist) {
-      const end = start.clone().add(new THREE.Vector3(Math.sin(angle)*length,Math.cos(angle)*length,(random()-.5)*length*.66));
-      const a = start.clone().lerp(end,.30), b = start.clone().lerp(end,.75);
-      a.x += Math.cos(angle)*length*.18; b.z += length*.28;
-      b.x -= Math.cos(angle)*length*.16;
-      const curve = new THREE.CubicBezierCurve3(start,a,b,end);
-      const positions=[],uvs=[],colours=[],flex=[],indices=[];
-      const along = 12, across = 4;
-      for(let i=0;i<=along;i++) {
-        const t=i/along, center=curve.getPoint(t), tangent=curve.getTangent(t);
-        const rotation=twist+Math.sin(t*Math.PI)*.68+t*.60+Math.sin(t*10+phase)*.15;
-        const facing=new THREE.Vector3(Math.sin(rotation),.05,Math.cos(rotation));
-        const side=new THREE.Vector3().crossVectors(tangent,facing).normalize();
-        const normal=new THREE.Vector3().crossVectors(side,tangent).normalize();
-        const tip=depth===0 ? Math.pow(Math.max(.018,Math.sin(Math.PI*(t*.93+.025))),.45) : .7+.3*Math.sin(t*Math.PI);
-        const spread=width*tip*(.77+.23*Math.sin(t*8+phase));
-        for(let j=0;j<=across;j++) {
-          const s=j/across*2-1;
-          const edgeRipple=Math.sin(t*22+phase+s*2)*.007*length*Math.pow(Math.abs(s),3);
-          const point=center.clone().addScaledVector(side,s*spread).addScaledVector(normal,(1-s*s)*.006+edgeRipple);
-          positions.push(point.x,point.y,point.z);uvs.push(j/across,t);
-          const pigment=colour.clone().multiplyScalar(.94+random()*.12);
-          colours.push(pigment.r,pigment.g,pigment.b);flex.push(Math.max(0,point.y)*.70);
+  function specimen(origin, length, lean, spread, pigment, phase) {
+    const group = new THREE.Group();
+    group.position.set(...origin);
+    rootGroup.add(group);
+    const bladePieces = [];
+    const color = new THREE.Color(pigments[pigment]);
+    const branch = (start, direction, height, width, depth) => {
+      const end = start.clone().add(new THREE.Vector3(
+        Math.sin(direction) * height,
+        Math.cos(direction) * height,
+        (random()-.5) * height * .38
+      ));
+      const control = start.clone().lerp(end,.55);
+      control.x += Math.cos(direction) * height * .13;
+      control.z += .14 * height;
+      const curve = new THREE.QuadraticBezierCurve3(start,control,end);
+      const stem = new THREE.Mesh(keepGeometry(new THREE.TubeGeometry(curve,7,Math.max(.007,width*.13),4,false)),stemMaterial);
+      group.add(stem);
+      const points=[], colors=[], indices=[];
+      const rows=12, columns=4;
+      for(let i=0;i<=rows;i++) {
+        const t=i/rows, center=curve.getPoint(t), tangent=curve.getTangent(t);
+        const side=new THREE.Vector3(tangent.y,-tangent.x,.12).normalize();
+        const breadth=width*Math.pow(Math.sin(Math.PI*t),.7)*(1+.12*Math.sin(t*24+phase));
+        for(let j=0;j<=columns;j++) {
+          const u=j/columns*2-1;
+          const cut=(Math.sin(t*31+phase*3+u*5)+Math.sin(t*53-u*3))*.012;
+          const fold=Math.sin(t*10+phase+u*2)*breadth*.17;
+          const p=center.clone().addScaledVector(side,u*(breadth+cut));
+          p.z+=fold+Math.abs(u)*breadth*.16;
+          points.push(p.x,p.y,p.z);
+          const shade=color.clone().multiplyScalar(.73 + .25*(1-Math.abs(u)) + .09*Math.sin(t*17+phase));
+          colors.push(shade.r,shade.g,shade.b);
         }
       }
-      for(let i=0;i<along;i++)for(let j=0;j<across;j++){
-        const n=i*(across+1)+j;indices.push(n,n+1,n+across+1,n+1,n+across+2,n+across+1);
+      for(let i=0;i<rows;i++)for(let j=0;j<columns;j++){
+        const n=i*(columns+1)+j;indices.push(n,n+1,n+columns+1,n+1,n+columns+2,n+columns+1);
       }
       const blade=new THREE.BufferGeometry();
-      blade.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-      blade.setAttribute('normal',new THREE.Float32BufferAttribute(new Float32Array(positions.length),3));
-      blade.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
-      blade.setAttribute('color',new THREE.Float32BufferAttribute(colours,3));
-      blade.setAttribute('shoreFlex',new THREE.Float32BufferAttribute(flex,1));
-      blade.setIndex(indices);blade.computeVertexNormals();blades.push(blade);
-      // Paired air vesicles are part of the wrack itself, at the blade's midrib.
-      if(depth===1 && length>.27 && random()>.34) {
-        const center=curve.getPoint(.36),tangent=curve.getTangent(.36);
-        const acrossVector=new THREE.Vector3().crossVectors(tangent,new THREE.Vector3(0,0,1)).normalize();
+      blade.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+      blade.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+      blade.setIndex(indices);blade.computeVertexNormals();bladePieces.push(blade);
+      if(depth>0) {
         for(const sign of [-1,1]) {
-          const point=center.clone().addScaledVector(acrossVector,sign*width*.60);
-          point.z+=.022;
-          const radius=width*.27;
-          quaternion.setFromUnitVectors(up,tangent);
-          matrix.compose(point,quaternion,new THREE.Vector3(radius,radius*1.30,radius*.78));
-          const bladder=vesicleGeometry.clone().applyMatrix4(matrix), count=bladder.attributes.position.count;
-          const colorValues=[],weights=[];
-          for(let k=0;k<count;k++){colorValues.push(colour.r,colour.g,colour.b);weights.push(Math.max(0,point.y)*.70);}
-          bladder.setAttribute('color',new THREE.Float32BufferAttribute(colorValues,3));
-          bladder.setAttribute('shoreFlex',new THREE.Float32BufferAttribute(weights,1));vesicles.push(bladder);
+          const fork = end.clone().addScaledVector(new THREE.Vector3(Math.sin(direction),Math.cos(direction),0),-.07*height);
+          branch(fork,direction+sign*(.30+random()*.28),height*(.68+random()*.16),width*(.67+random()*.13),depth-1);
+        }
+        if(depth===1 && random()>.25)for(const sideSign of [-1,1]) {
+          const bead=new THREE.Mesh(bladderGeometry,bladderMaterial);
+          const at=curve.getPoint(.69);
+          bead.position.copy(at);bead.position.x+=sideSign*width*.52;
+          bead.scale.set(width*.29,width*.36,width*.21);
+          group.add(bead);
         }
       }
-      if(depth>0)for(const direction of [-1,1]) {
-        branch(end,angle+direction*(.31+random()*.25),length*(.65+random()*.16),width*.74,depth-1,twist+direction*(.35+random()*.22));
-      }
-    }
-    branch(new THREE.Vector3(),lean,height*.40,.038*height,3,phase*.8);
-    const geometry=ownGeometry(mergeGeometries(blades));blades.forEach(g=>g.dispose());
-    const leaves=new THREE.Mesh(geometry,leafMaterial);leaves.castShadow=leaves.receiveShadow=true;plant.add(leaves);
-    if(vesicles.length){const vg=ownGeometry(mergeGeometries(vesicles));vesicles.forEach(g=>g.dispose());const bladders=new THREE.Mesh(vg,vesicleMaterial);bladders.castShadow=true;plant.add(bladders);}
-    rootGroup.add(plant);plants.push({plant,phase,lean});
+    };
+    const anchor=new THREE.Mesh(keepGeometry(new THREE.IcosahedronGeometry(.15,1)),holdfastMaterial);
+    anchor.scale.set(1,.55,.8);group.add(anchor);
+    branch(new THREE.Vector3(),lean,length*.42,.045*length,2);
+    const joined=keepGeometry(mergeGeometries(bladePieces));
+    bladePieces.forEach(piece=>piece.dispose());
+    const frond=new THREE.Mesh(joined,bladeMaterial);
+    frond.castShadow=frond.receiveShadow=true;
+    group.add(frond);
+    specimens.push({group,phase});
   }
-  // An open, asymmetric silhouette: taller towards the distant shore, swept low at the front.
-  makePlant(3.47,-.28,-22.48,2.12,-.42,-.46,0);
-  makePlant(4.05,-.30,-22.72,1.91,.64,.59,1);
-  makePlant(3.05,-.36,-22.1,1.51,-.86,-.34,2);
-  makePlant(4.55,-.46,-23.05,1.39,.90,.72,3);
-  makePlant(2.70,-.56,-21.32,1.03,-1.03,-.67,4);
-  makePlant(5.08,-.65,-23.55,.96,.87,.83,1);
-  vesicleGeometry.dispose();
-
-  plants.forEach(({plant})=>plant.scale.setScalar(.60));
-  // One original specimen portrait, curved in space; fine wrack remains behind it.
-  const portraitGeometry = ownGeometry(new THREE.PlaneGeometry(3.5,2.6,28,24));
-  const pp = portraitGeometry.attributes.position;
-  for(let i=0;i<pp.count;i++) {
-    const x=pp.getX(i),y=pp.getY(i);
-    pp.setZ(i,Math.cos(x/3.5*Math.PI)*.14+Math.sin((y+1.3)/2.6*Math.PI)*.055);
-  }
-  portraitGeometry.computeVertexNormals();
-  const portraitMaterial = ownMaterial(new THREE.MeshBasicMaterial({
-    color:'#ddd9cf',alphaTest:.08,side:THREE.DoubleSide,fog:true,
-    transparent:false,depthWrite:true
-  }));
-  const bendPortrait=shader=>{
-    shader.uniforms.shoreTime=clock;
-    shader.vertexShader=shader.vertexShader
-      .replace('#include <common>','#include <common>\nuniform float shoreTime;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat shoreWeight=clamp((position.y+1.3)/2.6,0.,1.);\ntransformed.x+=sin(shoreTime*.19+position.y*1.1)*.025*shoreWeight;\ntransformed.z+=sin(shoreTime*.17+position.x*.8)*.022*shoreWeight;');
-  };
-  portraitMaterial.onBeforeCompile=bendPortrait;
-  const portrait = new THREE.Mesh(portraitGeometry,portraitMaterial);
-  portrait.name='Original coastal wrack specimen';
-  portrait.position.set(3.7,1.02,-21.9);
-  portrait.visible=false;
-  rootGroup.add(portrait);
-  // Preserve alpha-shaped occlusion in the atmosphere's separate depth target.
-  const depthScene = new THREE.Scene();
-  const portraitDepthMaterial = ownMaterial(new THREE.MeshDepthMaterial({
-    alphaTest:.08,side:THREE.DoubleSide,colorWrite:false,depthWrite:true
-  }));
-  portraitDepthMaterial.onBeforeCompile=bendPortrait;
-  const portraitDepthMesh = new THREE.Mesh(portraitGeometry,portraitDepthMaterial);
-  portraitDepthMesh.matrixAutoUpdate=false;
-  depthScene.add(portraitDepthMesh);
-  const releasePortraitTexture=t=>{t.dispose();t.image?.close?.();};
-  let portraitTexture;
-  const ready = new Promise((resolve,reject)=>{
-    portraitTexture=new THREE.TextureLoader().load('/textures/coastal-wrack.webp',texture=>{
-      if(disposed){releasePortraitTexture(texture);resolve();return;}
-      texture.colorSpace=THREE.SRGBColorSpace;
-      texture.anisotropy=4;
-      portraitMaterial.map=texture;portraitMaterial.needsUpdate=true;
-      portraitDepthMaterial.map=texture;portraitDepthMaterial.needsUpdate=true;
-      portraitLoaded=true;
-      portraitWasVisible=true;portrait.visible=!depthHidden;
-      resolve();
-    },undefined,()=>reject(new Error('Unable to load the coastal wrack specimen.')));
-  });
-  ready.catch(()=>{});
+  // The irregular stems produce a single asymmetric silhouette with visible negative space.
+  specimen([3.35,-.62,-22.45],2.25,-.40,1.2,0,.4);
+  specimen([3.85,-.61,-22.63],2.67,.12,1.2,1,1.1);
+  specimen([4.38,-.68,-22.89],2.12,.51,1.2,3,2.2);
+  specimen([3.02,-.68,-21.97],1.67,-.81,1.2,2,1.7);
+  specimen([4.93,-.82,-23.28],1.41,.86,1.2,4,2.7);
+  specimen([3.65,-.78,-22.16],1.22,-.16,1.2,0,3.1);
+  specimens.forEach(({group})=>group.scale.setScalar(1.26));
 
   return {
     rootGroup,
-    ready,
-    readyPromise:ready,
-    captureDepth(hide) {
-      if(hide&&!depthHidden){portraitWasVisible=portrait.visible;portrait.visible=false;depthHidden=true;}
-      else if(!hide&&depthHidden){portrait.visible=portraitWasVisible;depthHidden=false;}
-    },
-    renderDepth(renderer,camera) {
-      if(disposed||!portraitLoaded||!rootGroup.visible||!(depthHidden?portraitWasVisible:portrait.visible))return;
-      portrait.updateWorldMatrix(true,false);
-      portraitDepthMesh.matrix.copy(portrait.matrixWorld);
-      const previousAutoClear=renderer.autoClear;
-      renderer.autoClear=false;
-      try{renderer.render(depthScene,camera);}finally{renderer.autoClear=previousAutoClear;}
-    },
-    update(time,under,day,camera) {
+    ready: Promise.resolve(),
+    captureDepth(){},
+    renderDepth(){},
+    update(time,under,day,camera){
       if(disposed)return;
-      clock.value=time;
-      const phone=innerWidth<700;
-      rootGroup.position.x=phone?-.8:0;
-      portrait.scale.setScalar(phone?.82:1);
-      portrait.position.y=phone?.786:1.02;
-      rootGroup.visible=under<.32 && day>.32 && camera.position.z<-4 && camera.position.z>-29;
-      plants.forEach(({plant,phase})=>{plant.rotation.z=Math.sin(time*.19+phase)*.014;plant.rotation.x=Math.sin(time*.16+phase*2)*.012;});
+      rootGroup.position.x=innerWidth<700?-.8:0;
+      rootGroup.visible=under<.32&&day>.32&&camera.position.z<-4&&camera.position.z>-29;
+      specimens.forEach(({group,phase})=>{group.rotation.z=Math.sin(time*.19+phase)*.012;group.rotation.x=Math.sin(time*.13+phase)*.01;});
     },
-    dispose() {
-      if(disposed)return;disposed=true;
-      rootGroup.removeFromParent();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
-      depthScene.clear();
-      if(portraitTexture)releasePortraitTexture(portraitTexture);
+    dispose(){
+      if(disposed)return;disposed=true;rootGroup.removeFromParent();
+      geometries.forEach(geometry=>geometry.dispose());
+      materials.forEach(material=>material.dispose());
     }
   };
 }
