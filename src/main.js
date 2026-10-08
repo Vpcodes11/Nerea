@@ -100,7 +100,7 @@ function render() {
     document.querySelectorAll('.chapter').forEach(section => { const frame = document.createElement('div'); frame.className = 'chapter-frame'; frame.append(...section.childNodes); section.append(frame); });
     const container = document.querySelector('#world');
     const params = new URLSearchParams(location.search);
-    if (!enteredOcean && !params.has('poster') && !params.has('studio')) entry = createOceanEntry(enabled => { enteredOcean = true; toggleSound(enabled); });
+    if (!enteredOcean && !params.has('poster') && !params.has('studio')) entry = createOceanEntry(enabled => { enteredOcean = true; toggleSound(enabled); world?.startIntro(); });
     const openingEntry = entry;
     openingEntry?.update(8, 'Opening the horizon');
     const fallback = () => { if (!container.isConnected) return; container.classList.add('static-world'); document.querySelector('#load-status').textContent = 'Static ocean view ready.'; document.querySelector('.scene-status')?.classList.add('ready'); document.body.classList.add('static-mode'); document.querySelectorAll('.feature-story').forEach(p=>{p.hidden=false;p.removeAttribute('aria-hidden');}); openingEntry?.complete(true); };
