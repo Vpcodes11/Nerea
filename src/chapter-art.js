@@ -18,7 +18,7 @@ export function buildChapterArt(scene,bottle){
  const profile=[];for(let i=0;i<=22;i++){const t=i/22*Math.PI/2;profile.push(new THREE.Vector2(.34*Math.sin(t),.97-.34*(1-Math.cos(t))));}profile.push(new THREE.Vector2(.34,0),new THREE.Vector2(.316,0),new THREE.Vector2(.316,.63));for(let i=21;i>=0;i--){const t=i/22*Math.PI/2;profile.push(new THREE.Vector2(.316*Math.sin(t),.95-.32*(1-Math.cos(t))));}
  const shellGeo=new THREE.LatheGeometry(profile,64);
  const shellMat=new THREE.MeshPhysicalMaterial({color:'#e9d9d4',roughness:.18,metalness:.27,clearcoat:1,iridescence:.55,iridescenceThicknessRange:[190,350],side:THREE.DoubleSide});
- const glassMat=new THREE.MeshPhysicalMaterial({color:'#99bdbb',roughness:.11,metalness:.18,clearcoat:1,transmission:.38,thickness:.08,iridescence:.75,iridescenceThicknessRange:[220,420],side:THREE.DoubleSide});
+ const glassMat=new THREE.MeshPhysicalMaterial({color:'#99bdbb',roughness:.11,metalness:.18,clearcoat:1,transparent:true,opacity:.84,depthWrite:false,forceSinglePass:true,iridescence:.75,iridescenceThicknessRange:[220,420],side:THREE.DoubleSide});
  const topHalf=new THREE.Group(),bottomHalf=new THREE.Group();topHalf.add(new THREE.Mesh(shellGeo,shellMat));bottomHalf.add(new THREE.Mesh(shellGeo,glassMat));bottomHalf.rotation.z=Math.PI;capsule.add(topHalf,bottomHalf);
  const gold=new THREE.MeshPhysicalMaterial({color:'#e3be86',metalness:.8,roughness:.18,clearcoat:1,side:THREE.DoubleSide});
  for(const half of [topHalf,bottomHalf]){const lip=new THREE.Mesh(new THREE.TorusGeometry(.326,.009,8,64),gold);lip.rotation.x=Math.PI/2;half.add(lip);}
