@@ -8,24 +8,22 @@
 @media(max-width:760px){.entry-top{top:5%;left:7%;right:7%}.entry-top>span:last-child{display:none}.entry-brand{font-size:19px}.entry-copy{left:8%;top:24%}.entry-copy h1{font-size:clamp(74px,17vw,112px)}.entry-kicker{font-size:7px;letter-spacing:.16em;margin-bottom:23px}.entry-copy p{font-size:11px;margin-top:24px}.entry-cloud{width:140%;height:50%}.entry-cloud-left{left:-75%;top:14%}.entry-cloud-right{right:-70%;top:31%}.entry-bottom{left:8%;right:8%;bottom:5%;gap:16px}.entry-enter{min-width:190px;padding:13px 18px;gap:22px;font-size:11px;min-height:48px}.entry-progress{width:74px}.entry-number{font-size:39px;margin:10px 0}.entry-number small{display:none}.entry-status{font-size:8px;line-height:1.6}.entry-sound-note{font-size:6px;letter-spacing:.07em;max-width:195px}.entry-silent{font-size:10px}.entry-actions{gap:12px}.music-volume{width:40px}.is-home .ambient-controls{gap:7px}.inner-audio{bottom:10px;left:10px}}
 @media(max-height:620px){.entry-copy{top:20%}.entry-copy h1{font-size:70px}.entry-copy p{margin-top:14px}.entry-kicker{margin-bottom:16px}.entry-bottom{bottom:5%}.entry-sound-note{display:none}}
 @media(prefers-reduced-motion:reduce){.entry-sky,.entry-cloud,.entry-glow,.entry-horizon,.entry-copy,.entry-top,.entry-bottom{animation:none}.ocean-entry,.entry-leaving .entry-copy{transition:none}.sound-toggle[aria-pressed=true] .sound-bars i{animation:none}}
-.entry-water{height:54%;opacity:.96}
-.entry-portal{position:absolute;right:7%;top:17%;width:min(32vw,430px);aspect-ratio:1;z-index:1;border-radius:50%;border:1px solid rgba(230,213,179,.76);box-shadow:0 0 0 1px rgba(244,234,211,.14),0 0 0 22px rgba(232,222,199,.035),0 0 110px rgba(207,195,179,.16),inset 0 0 60px rgba(239,226,203,.13);animation:entry-portal-breathe 8s ease-in-out infinite alternate;transition:transform 1.1s cubic-bezier(.2,.7,.2,1),opacity 1.1s ease}
-.entry-portal:before,.entry-portal:after{content:"";position:absolute;border-radius:50%;pointer-events:none}
-.entry-portal:before{inset:-13px;border:1px solid rgba(235,221,190,.26);animation:entry-ring 5s ease-out infinite}
-.entry-portal:after{inset:7px;border:1px solid rgba(235,221,190,.19)}
-.entry-portal-photo{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:linear-gradient(90deg,rgba(19,25,45,.20),transparent 50%,rgba(11,18,30,.10)),url('/poster-desktop.jpg') 50% 48%/auto 120% no-repeat;filter:saturate(.68) contrast(1.06);animation:entry-portal-image 11s ease-in-out infinite alternate}
-.entry-portal-cloud{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:url('/textures/night-sky.webp') 40% 45%/220% auto no-repeat;mix-blend-mode:screen;opacity:.16;mask-image:linear-gradient(#000,transparent 70%);animation:entry-portal-cloud 12s ease-in-out infinite alternate}
-.entry-portal-marker{position:absolute;top:-29px;left:50%;width:max-content;transform:translateX(-50%);font-size:8px;letter-spacing:.28em;color:#e2d4bc;text-shadow:0 2px 16px #14273a}
-.entry-portal-marker:before,.entry-portal-marker:after{content:"";display:inline-block;width:25px;height:1px;background:rgba(226,212,188,.6);vertical-align:middle;margin:0 14px}
-.entry-grain{z-index:2}.entry-copy,.entry-top,.entry-bottom{z-index:3}
-.entry-copy h1{font-size:clamp(76px,7.8vw,130px)}
-.ocean-entry[data-ready="true"] .entry-portal{box-shadow:0 0 0 1px rgba(244,234,211,.30),0 0 0 22px rgba(232,222,199,.045),0 0 125px rgba(225,210,178,.25),inset 0 0 70px rgba(239,226,203,.17)}
-.entry-leaving .entry-portal{animation:none;transform:scale(3.3);opacity:.72}
-.entry-leaving .entry-portal-photo{animation:none}
-@keyframes entry-portal-breathe{to{transform:translateY(-12px) scale(1.035)}}
-@keyframes entry-portal-image{to{background-size:auto 128%;background-position:53% 45%}}
-@keyframes entry-portal-cloud{to{background-position:65% 35%;opacity:.28}}
-@keyframes entry-ring{to{transform:scale(1.14);opacity:0}}
-@media(max-width:760px){.entry-portal{width:min(80vw,410px);right:-19%;top:28%;opacity:.74}.entry-portal-marker{display:none}.entry-copy{z-index:4}.entry-copy h1{font-size:clamp(70px,16vw,106px)}}
-@media(max-height:620px){.entry-portal{width:min(31vw,300px);top:18%}}
-@media(prefers-reduced-motion:reduce){.entry-portal,.entry-portal-photo,.entry-portal-cloud,.entry-portal:before{animation:none}.entry-leaving .entry-portal{transition:none}}
+.entry-sky{inset:-12% -12% 30%;background-position:center 24%;filter:brightness(1.16) saturate(.55);animation:entry-sky-voyage 27s linear infinite alternate}
+.entry-cloud{width:105%;height:56%;background-size:175% auto;opacity:.42;filter:brightness(1.15) saturate(.48) blur(4px);mask-image:radial-gradient(ellipse at center,#000 9%,#000 35%,transparent 75%);animation:entry-cloud-voyage 32s ease-in-out infinite alternate}
+.entry-cloud-left{left:-48%;top:3%;animation-duration:27s;opacity:.53}
+.entry-cloud-right{right:-48%;top:17%;animation-duration:38s;animation-delay:-18s;opacity:.42;transform:scaleX(-1)}
+.entry-cloud-high{left:5%;top:-19%;height:42%;opacity:.25;animation-duration:46s;animation-delay:-28s;filter:brightness(1.3) saturate(.35) blur(8px)}
+.entry-water{height:52%;opacity:1;mask-image:linear-gradient(transparent,#000 10%)}
+.entry-horizon{top:46%;height:14%;opacity:.6}
+.entry-sea-light{position:absolute;left:18%;right:18%;top:48%;bottom:-20%;background:radial-gradient(ellipse at 50% 0%,rgba(230,225,205,.19),transparent 52%);mix-blend-mode:screen;animation:entry-sea-breathe 8s ease-in-out infinite alternate}
+.entry-glow{left:30%;top:25%;width:42%;height:33%;animation-duration:11s}
+.entry-grain{z-index:2;background:linear-gradient(0deg,#0b1c31ae,transparent 53%,#101d3117)}
+.entry-copy,.entry-top,.entry-bottom{z-index:3}
+.entry-copy{left:8%;top:22%;text-shadow:0 2px 28px rgba(14,27,43,.25)}
+.entry-copy h1{font-size:clamp(76px,7.8vw,128px)}
+.entry-leaving .entry-landscape{transform:scale(1.08);transition:transform 1.1s ease-out}
+@keyframes entry-sky-voyage{to{transform:scale(1.1) translateX(-3%)}}
+@keyframes entry-cloud-voyage{to{translate:28% 3%;scale:1.06;opacity:.68}}
+@keyframes entry-sea-breathe{to{opacity:.55;transform:scaleX(1.3)}}
+@media(max-width:760px){.entry-copy{left:8%;top:21%}.entry-copy h1{font-size:clamp(70px,16vw,106px)}.entry-cloud{width:180%;height:49%}.entry-cloud-left{left:-100%;top:7%}.entry-cloud-right{right:-97%;top:18%}.entry-cloud-high{left:-34%;top:-14%}.entry-water{height:55%}}
+@media(prefers-reduced-motion:reduce){.entry-sky,.entry-cloud,.entry-sea-light{animation:none}.entry-leaving .entry-landscape{transition:none}}
