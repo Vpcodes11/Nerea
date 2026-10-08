@@ -3,14 +3,15 @@ import {Water} from 'three/addons/objects/Water.js';
 import {buildAssets} from './world-assets.js';
 import {buildMarineWorld} from './marine-world.js';
 import {progressAt} from './journey-progress.js';
+import {setMusicScene} from './soundtrack.js';
 
 const clamp=v=>Math.max(0,Math.min(1,v)),smooth=v=>{v=clamp(v);return v*v*(3-2*v);},mix=(a,b,t)=>a+(b-a)*t;
 export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   const params=new URLSearchParams(location.search),studio=params.has('studio'),mobile=()=>innerWidth<700;
   if(studio)container.classList.add('studio-world');
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:studio});}catch{onFallback();return null;}
-  let renderScale=1;
-  const applyResolution=()=>{renderer.setPixelRatio(Math.min(devicePixelRatio,mobile()?1:1.25)*renderScale);renderer.setSize(innerWidth,innerHeight);container.dataset.pixelRatio=renderer.getPixelRatio().toFixed(2);};
+  let renderScale=1,depthTarget;
+  const applyResolution=()=>{renderer.setPixelRatio(Math.min(devicePixelRatio,mobile()?1:1.25)*renderScale);renderer.setSize(innerWidth,innerHeight);container.dataset.pixelRatio=renderer.getPixelRatio().toFixed(2);if(depthTarget){const size=renderer.getDrawingBufferSize(new THREE.Vector2());depthTarget.setSize(Math.ceil(size.x*.75),Math.ceil(size.y*.75));}};
   applyResolution();
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   renderer.info.autoReset=false;
@@ -20,7 +21,8 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   scene.fog=new THREE.FogExp2('#352d4c',.035);
   const worldFog=scene.fog;
   const assets=buildAssets(scene,renderer),marine=studio?null:buildMarineWorld(scene,renderer);
-  const depthTarget=new THREE.WebGLRenderTarget(innerWidth,innerHeight,{depthTexture:new THREE.DepthTexture(innerWidth,innerHeight,THREE.UnsignedIntType)});
+  const depthWidth=Math.ceil(innerWidth*renderer.getPixelRatio()*.75),depthHeight=Math.ceil(innerHeight*renderer.getPixelRatio()*.75);
+  depthTarget=new THREE.WebGLRenderTarget(depthWidth,depthHeight,{depthTexture:new THREE.DepthTexture(depthWidth,depthHeight,THREE.UnsignedIntType)});
   const depthMaterial=new THREE.MeshDepthMaterial();depthMaterial.colorWrite=false;
   const ambient=new THREE.HemisphereLight('#e8d8ee','#3b294f',1.5);scene.add(ambient);
   const key=new THREE.DirectionalLight('#f4d0d7',3);key.position.set(-5,8,6);key.castShadow=!mobile();key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-8;key.shadow.camera.right=8;key.shadow.camera.top=8;key.shadow.camera.bottom=-8;key.shadow.normalBias=.035;scene.add(key);
@@ -56,13 +58,13 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   for(let i=0;i<700;i++){const theta=random()*Math.PI*2,phi=random()*Math.PI*.5,r=100;starPositions.set([Math.cos(theta)*Math.cos(phi)*r,Math.sin(phi)*r,Math.sin(theta)*Math.cos(phi)*r],i*3);}
   const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.BufferAttribute(starPositions,3));const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:'#d9d2e3',size:.10,transparent:true,opacity:.65,fog:false,depthWrite:false}));scene.add(stars);
   const waterNormals=new THREE.TextureLoader().load('/textures/water-normal.jpg');waterNormals.wrapS=waterNormals.wrapT=THREE.RepeatWrapping;
-  const water=new Water(new THREE.PlaneGeometry(350,350),{textureWidth:mobile()?384:640,textureHeight:mobile()?384:640,waterNormals,sunDirection:new THREE.Vector3(-.4,.35,-1).normalize(),sunColor:'#f0c8ad',waterColor:'#65536d',distortionScale:2.2,fog:true});water.rotation.x=-Math.PI/2;water.position.set(0,-.85,-50);scene.add(water);
+  const water=new Water(new THREE.PlaneGeometry(350,350),{textureWidth:mobile()?256:448,textureHeight:mobile()?256:448,waterNormals,sunDirection:new THREE.Vector3(-.4,.35,-1).normalize(),sunColor:'#f0c8ad',waterColor:'#65536d',distortionScale:2.2,fog:true});water.rotation.x=-Math.PI/2;water.position.set(0,-.85,-50);scene.add(water);
   const renderWaterReflection=water.onBeforeRender,reflectionPosition=new THREE.Vector3(),reflectionRotation=new THREE.Quaternion();
   let reflectionAt=-Infinity,reflectionAspect=0,forceReflection=false,reflectionCalls=0;
   // Calm water can reuse a reflection between frames; travel and pointer movement refresh immediately.
   water.onBeforeRender=function(render,world,viewCamera){
     const now=performance.now(),moving=reflectionPosition.distanceToSquared(viewCamera.position)>.000004||reflectionRotation.angleTo(viewCamera.quaternion)>.0005||reflectionAspect!==viewCamera.aspect;
-    if(forceReflection||reflectionAspect!==viewCamera.aspect||now-reflectionAt>=(moving?1000/24:1000/12)){
+    if(forceReflection||reflectionAspect!==viewCamera.aspect||now-reflectionAt>=(moving?1000/12:1000/6)){
       const before=render.info.render.calls;renderWaterReflection.call(this,render,world,viewCamera);reflectionCalls+=render.info.render.calls-before;
       reflectionPosition.copy(viewCamera.position);reflectionRotation.copy(viewCamera.quaternion);reflectionAspect=viewCamera.aspect;reflectionAt=now;
     }else water.material.uniforms.eye.value.copy(viewCamera.position);
@@ -169,11 +171,11 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
       renderer.getDrawingBufferSize(bufferSize);marine.setCloudDepth(depthTarget.depthTexture,bufferSize.x,bufferSize.y,camera);depthCalls=renderer.info.render.calls;
     }
     renderer.render(scene,camera);
-    const chapter=String(Math.min(3,Math.floor(v+.001)));if(container.dataset.chapter!==chapter)container.dataset.chapter=chapter;
+    const chapter=String(Math.min(3,Math.floor(v+.001)));if(container.dataset.chapter!==chapter){container.dataset.chapter=chapter;setMusicScene(Number(chapter));}
     if(ms-lastStats>250){lastStats=ms;container.dataset.progress=progress.toFixed(4);container.dataset.cloudCover=cloudCover.toFixed(3);container.dataset.camera=camera.position.toArray().map(n=>n.toFixed(2)).join(',');container.dataset.triangles=renderer.info.render.triangles;container.dataset.fps=(1/elapsed).toFixed(0);container.dataset.renderCalls=renderer.info.render.calls;container.dataset.depthCalls=depthCalls;container.dataset.reflectionCalls=reflectionCalls;}
     if(!still)wake();
   }
-  const resize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyResolution();depthTarget.setSize(innerWidth,innerHeight);reflectionAt=-Infinity;lastInteraction=performance.now();layout();wake();};
+  const resize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyResolution();reflectionAt=-Infinity;lastInteraction=performance.now();layout();wake();};
   const move=e=>{targetPointer={x:e.clientX/innerWidth-.5,y:e.clientY/innerHeight-.5};lastInteraction=performance.now();};
   const scroll=()=>{lastInteraction=performance.now();wake();};
   const motionChange=()=>{signature='';previous=0;wake();},visibility=()=>{if(document.hidden)suspend();else wake();};
