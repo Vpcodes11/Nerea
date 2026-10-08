@@ -11,7 +11,7 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   if(studio)container.classList.add('studio-world');
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:studio});}catch{onFallback();return null;}
   let renderScale=1,depthTarget;
-  const applyResolution=()=>{renderer.setPixelRatio(Math.min(devicePixelRatio,mobile()?1:1.25)*renderScale);renderer.setSize(innerWidth,innerHeight);container.dataset.pixelRatio=renderer.getPixelRatio().toFixed(2);if(depthTarget){const size=renderer.getDrawingBufferSize(new THREE.Vector2());depthTarget.setSize(Math.ceil(size.x*.75),Math.ceil(size.y*.75));}};
+  const applyResolution=()=>{renderer.setPixelRatio(Math.min(devicePixelRatio,mobile()?1:1.25)*renderScale);renderer.setSize(innerWidth,innerHeight);container.dataset.pixelRatio=renderer.getPixelRatio().toFixed(2);if(depthTarget){const size=renderer.getDrawingBufferSize(new THREE.Vector2());depthTarget.setSize(Math.ceil(size.x*.625),Math.ceil(size.y*.625));}};
   applyResolution();
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   renderer.info.autoReset=false;
@@ -21,7 +21,7 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   scene.fog=new THREE.FogExp2('#352d4c',.035);
   const worldFog=scene.fog;
   const assets=buildAssets(scene,renderer),marine=studio?null:buildMarineWorld(scene,renderer);
-  const depthWidth=Math.ceil(innerWidth*renderer.getPixelRatio()*.75),depthHeight=Math.ceil(innerHeight*renderer.getPixelRatio()*.75);
+  const depthWidth=Math.ceil(innerWidth*renderer.getPixelRatio()*.625),depthHeight=Math.ceil(innerHeight*renderer.getPixelRatio()*.625);
   depthTarget=new THREE.WebGLRenderTarget(depthWidth,depthHeight,{depthTexture:new THREE.DepthTexture(depthWidth,depthHeight,THREE.UnsignedIntType)});
   const depthMaterial=new THREE.MeshDepthMaterial();depthMaterial.colorWrite=false;
   const ambient=new THREE.HemisphereLight('#e8d8ee','#3b294f',1.5);scene.add(ambient);
@@ -86,6 +86,7 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   let pointer={x:0,y:0},targetPointer={x:0,y:0},capsuleWasVisible=false;
   const layout=()=>{offsets=chapters.map(c=>({top:c.offsetTop,height:c.offsetHeight}));signature='';};layout();progress=progressAt(scrollY,offsets);
   const pose=new THREE.Vector3(),target=new THREE.Vector3(),nextPose=new THREE.Vector3(),nextTarget=new THREE.Vector3(),introOffset=new THREE.Vector3(),bufferSize=new THREE.Vector2();
+  const depthPosition=new THREE.Vector3(),depthRotation=new THREE.Quaternion();let depthAt=-Infinity,depthAspect=0;
   const nightFog=new THREE.Color('#211d36'),dayFog=new THREE.Color('#c2beb7'),deepFog=new THREE.Color('#253943'),fogColor=new THREE.Color(),dayWater=new THREE.Color('#798b88');
   // The depth prepass needs solid occluders only, not transparent rays, bubbles or points.
   const depthLayer=1;scene.traverse(o=>{if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];if(materials.every(m=>m.depthWrite))o.layers.enable(depthLayer);}});
@@ -108,8 +109,8 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
     if(!studio&&!reduced()&&!engaged&&ms-lastRendered<1000/36){wake();return;}
     lastRendered=ms;
     const elapsed=previous?(ms-previous)/1000:1/60,dt=Math.min(elapsed,.05);previous=ms;
-    if(engaged&&elapsed<.2){perfTime+=elapsed;perfFrames++;if(perfTime>1.2){if(perfFrames/perfTime<43&&renderScale>.76){renderScale=Math.max(.75,renderScale-.125);applyResolution();reflectionAt=-Infinity;}perfTime=perfFrames=0;}}
-    else if(!engaged){perfTime=perfFrames=0;}
+    if(elapsed<.2){perfTime+=elapsed;perfFrames++;if(perfTime>1.5){if(perfFrames/perfTime<(engaged?43:29)&&renderScale>.76){renderScale=Math.max(.75,renderScale-.125);applyResolution();reflectionAt=depthAt=-Infinity;}perfTime=perfFrames=0;}}
+    else{perfTime=perfFrames=0;}
     const still=reduced(),desired=progressAt(scrollY,offsets);
     if(still)progress=Math.floor(desired);
     else{
@@ -163,19 +164,24 @@ export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
     if(studio){sky.visible=stars.visible=water.visible=ceiling.visible=false;scene.background=new THREE.Color('#ddd4dd');scene.fog=null;assets.capsule.visible=assets.sculpture.visible=false;assets.bottle.position.set(0,-1.65,0);assets.bottle.scale.setScalar(1.35);assets.bottle.rotation.set(.025,-.05,-.10);camera.position.set(0,0,8);camera.lookAt(0,0,0);}
     renderer.info.reset();reflectionCalls=0;forceReflection=still;let depthCalls=0;
     if(marine&&under<.65){
-      marine.captureCloudDepth(true);const wasWater=water.visible,wasStars=stars.visible;water.visible=stars.visible=sky.visible=false;
-      const cameraLayers=camera.layers.mask;camera.layers.set(depthLayer);
-      scene.overrideMaterial=depthMaterial;renderer.setRenderTarget(depthTarget);renderer.render(scene,camera);scene.overrideMaterial=null;camera.layers.mask=cameraLayers;
-      marine.renderCutoutDepth(renderer,camera);renderer.setRenderTarget(null);
-      water.visible=wasWater;stars.visible=wasStars;sky.visible=true;marine.captureCloudDepth(false);
-      renderer.getDrawingBufferSize(bufferSize);marine.setCloudDepth(depthTarget.depthTexture,bufferSize.x,bufferSize.y,camera);depthCalls=renderer.info.render.calls;
+      const depthMoved=depthPosition.distanceToSquared(camera.position)>.000001||depthRotation.angleTo(camera.quaternion)>.0003||depthAspect!==camera.aspect;
+      if(still||depthMoved||ms-depthAt>160){
+        marine.captureCloudDepth(true);const wasWater=water.visible,wasStars=stars.visible;water.visible=stars.visible=sky.visible=false;
+        const cameraLayers=camera.layers.mask;camera.layers.set(depthLayer);
+        scene.overrideMaterial=depthMaterial;renderer.setRenderTarget(depthTarget);renderer.render(scene,camera);scene.overrideMaterial=null;camera.layers.mask=cameraLayers;
+        marine.renderCutoutDepth(renderer,camera);renderer.setRenderTarget(null);
+        water.visible=wasWater;stars.visible=wasStars;sky.visible=true;marine.captureCloudDepth(false);
+        depthPosition.copy(camera.position);depthRotation.copy(camera.quaternion);depthAspect=camera.aspect;depthAt=ms;
+        depthCalls=renderer.info.render.calls;
+      }
+      renderer.getDrawingBufferSize(bufferSize);marine.setCloudDepth(depthTarget.depthTexture,bufferSize.x,bufferSize.y,camera);
     }
     renderer.render(scene,camera);
     const chapter=String(Math.min(3,Math.floor(v+.001)));if(container.dataset.chapter!==chapter){container.dataset.chapter=chapter;setMusicScene(Number(chapter));}
     if(ms-lastStats>250){lastStats=ms;container.dataset.progress=progress.toFixed(4);container.dataset.cloudCover=cloudCover.toFixed(3);container.dataset.camera=camera.position.toArray().map(n=>n.toFixed(2)).join(',');container.dataset.triangles=renderer.info.render.triangles;container.dataset.fps=(1/elapsed).toFixed(0);container.dataset.renderCalls=renderer.info.render.calls;container.dataset.depthCalls=depthCalls;container.dataset.reflectionCalls=reflectionCalls;}
     if(!still)wake();
   }
-  const resize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyResolution();reflectionAt=-Infinity;lastInteraction=performance.now();layout();wake();};
+  const resize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyResolution();reflectionAt=depthAt=-Infinity;lastInteraction=performance.now();layout();wake();};
   const move=e=>{targetPointer={x:e.clientX/innerWidth-.5,y:e.clientY/innerHeight-.5};lastInteraction=performance.now();};
   const scroll=()=>{lastInteraction=performance.now();wake();};
   const motionChange=()=>{signature='';previous=0;wake();},visibility=()=>{if(document.hidden)suspend();else wake();};
