@@ -2,6 +2,8 @@
 
 An original ocean-inspired brand concept with a continuous Three.js world, product gallery, demo shopping bag, and three journal articles.
 
+See [AWWWARDS_REVIEW.md](AWWWARDS_REVIEW.md) for the current aesthetic assessment, captured evidence and improvement priorities.
+
 ## Run
 
 Node.js 20.19+ or 22.12+.
