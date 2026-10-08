@@ -5,13 +5,15 @@ import '@fontsource/cormorant-garamond/latin-400.css';
 import '@fontsource/cormorant-garamond/latin-400-italic.css';
 import './style.css';
 import { progressAt } from './journey-progress.js';
+import { createOceanEntry } from './ocean-entry.js';
+import { setMusic, setMusicVolume } from './soundtrack.js';
 
 const app = document.querySelector('#app');
 const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 19 19 5M5 5h14v14"/></svg>';
 const down = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 4v16m-6-6 6 6 6-6"/></svg>';
 const bag = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 8h14l1 13H4L5 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>';
 const emblem = '<svg class="emblem" viewBox="0 0 70 70" fill="none" stroke="currentColor" stroke-width="1.2"><ellipse cx="35" cy="35" rx="12" ry="25" transform="rotate(-30 35 35)"/><ellipse cx="35" cy="35" rx="12" ry="25" transform="rotate(30 35 35)"/><path d="M14 35h42"/></svg>';
-let world, sound = false, audioContext, gain, soundNodes = [], activeArticle = null;
+let world, sound = false, activeArticle = null, entry, enteredOcean = false, musicVolume = 45;
 let motionReduced = false;
 try { motionReduced = localStorage.getItem('nerea-motion') === 'reduced'; } catch {}
 let storedCart;
@@ -78,26 +80,37 @@ function navigate(url, push = true) {
   render();
 }
 function render() {
+  entry?.destroy(); entry = null;
   world?.destroy(); world = null;
-  if (sound) toggleSound(false);
   const path = location.pathname.replace(/\/$/, '') || '/';
   activeArticle = articles.find(a => path === `/journal/${a.slug}`);
   const isHome = path === '/';
   document.body.className = (isHome ? 'is-home' : 'is-inner') + (motionReduced ? ' reduce-motion' : '') + (new URLSearchParams(location.search).has('poster') ? ' poster-render' : '');
   app.innerHTML = path === '/product' ? product() : path === '/journal' ? journal() : activeArticle ? article(activeArticle) : isHome ? home() : `${header(true)}<main class="not-found page-light"><span class="eyebrow">A LITTLE OFF COURSE / 404</span><h1>Back to the <em>ocean.</em></h1><p>This page doesn’t exist. Your journey is waiting.</p><a class="pill dark" href="/" data-route>Return home ${arrow}</a></main>${footer()}`;
   app.insertAdjacentHTML('afterbegin', '<a class="skip-link" href="#main">Skip to content</a>');
+  if (!isHome) app.insertAdjacentHTML('beforeend', '<div class="inner-audio"><button class="sound-toggle" aria-pressed="false"><span class="sound-bars"><i></i><i></i><i></i><i></i></span><span class="sound-label">SOUND OFF</span></button></div>');
+  const soundButton = document.querySelector('.sound-toggle');
+  soundButton.insertAdjacentHTML('afterend', `<input class="music-volume" type="range" min="0" max="100" value="${musicVolume}" aria-label="Soundtrack volume"/>`);
+  soundButton.addEventListener('click', () => toggleSound(!sound));
+  document.querySelector('.music-volume').addEventListener('input', e => { musicVolume = Number(e.target.value); setMusicVolume(musicVolume/100); });
+  updateSoundControl();
   document.title = isHome ? 'NERÉA — A little ocean. A daily ritual.' : path === '/product' ? 'Sea moss — NERÉA' : activeArticle ? `${activeArticle.title} — NERÉA Journal` : 'The Journal — NERÉA';
   scrollTo({ top: 0, behavior: 'instant' });
   if (isHome) {
     document.querySelectorAll('.chapter').forEach(section => { const frame = document.createElement('div'); frame.className = 'chapter-frame'; frame.append(...section.childNodes); section.append(frame); });
     const container = document.querySelector('#world');
-    const fallback = () => { if (!container.isConnected) return; container.classList.add('static-world'); document.querySelector('#load-status').textContent = 'Static ocean view ready.'; document.querySelector('.scene-status')?.classList.add('ready'); document.body.classList.add('static-mode'); document.querySelectorAll('.feature-story').forEach(p=>{p.hidden=false;p.removeAttribute('aria-hidden');}); };
+    const params = new URLSearchParams(location.search);
+    if (!enteredOcean && !params.has('poster') && !params.has('studio')) entry = createOceanEntry(enabled => { enteredOcean = true; toggleSound(enabled); });
+    const openingEntry = entry;
+    openingEntry?.update(8, 'Opening the horizon');
+    const fallback = () => { if (!container.isConnected) return; container.classList.add('static-world'); document.querySelector('#load-status').textContent = 'Static ocean view ready.'; document.querySelector('.scene-status')?.classList.add('ready'); document.body.classList.add('static-mode'); document.querySelectorAll('.feature-story').forEach(p=>{p.hidden=false;p.removeAttribute('aria-hidden');}); openingEntry?.complete(true); };
     if (new URLSearchParams(location.search).get('view') === 'static') fallback();
     else {
       const timeout = setTimeout(fallback, 6000);
       Promise.all([document.fonts.ready, import('./experience.js')]).then(([, { createWorld }]) => {
         if (!container.isConnected) { clearTimeout(timeout); return; }
-        world = createWorld(container, () => { clearTimeout(timeout); container.classList.remove('static-world'); document.body.classList.remove('static-mode'); container.classList.add('world-ready'); world?.refreshLayout(); if (location.hash) requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'instant' })); inspect(Number(document.querySelector('[data-inspect][aria-selected=true]')?.dataset.inspect || 0)); document.querySelector('#load-status').textContent = 'Your ocean is ready.'; document.querySelector('.scene-status')?.classList.add('ready'); }, fallback);
+        openingEntry?.update(22, 'Shaping the water');
+        world = createWorld(container, () => { clearTimeout(timeout); container.classList.remove('static-world'); document.body.classList.remove('static-mode'); container.classList.add('world-ready'); world?.refreshLayout(); if (location.hash) requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'instant' })); inspect(Number(document.querySelector('[data-inspect][aria-selected=true]')?.dataset.inspect || 0)); document.querySelector('#load-status').textContent = 'Your ocean is ready.'; document.querySelector('.scene-status')?.classList.add('ready'); openingEntry?.complete(); }, fallback, (value,label) => openingEntry?.update(value,label));
         window.nereaCapture = () => world?.capture();
       }).catch(error => { console.error('Unable to initialize the ocean scene:', error); fallback(); });
     }
@@ -105,7 +118,6 @@ function render() {
       button.addEventListener('click', () => inspect(Number(button.dataset.inspect)));
       button.addEventListener('keydown', e => { if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) { e.preventDefault(); const i = e.key === 'Home' ? 0 : e.key === 'End' ? 2 : (Number(button.dataset.inspect) + (['ArrowDown','ArrowRight'].includes(e.key) ? 1 : 2)) % 3; inspect(i); document.querySelector(`[data-inspect="${i}"]`).focus(); } });
     });
-    document.querySelector('.sound-toggle').addEventListener('click', () => toggleSound(!sound));
     const motionButton = document.querySelector('.motion-toggle');
     const updateMotion = () => { const reduced = motionReduced || matchMedia('(prefers-reduced-motion: reduce)').matches; motionButton.setAttribute('aria-pressed', String(reduced)); motionButton.setAttribute('aria-label', reduced ? 'Enable scene motion' : 'Reduce scene motion'); motionButton.textContent = reduced ? 'MOTION REDUCED' : 'MOTION ON'; };
     motionButton.addEventListener('click', () => { motionReduced = !motionReduced; try { localStorage.setItem('nerea-motion', motionReduced ? 'reduced' : 'full'); } catch {} document.body.classList.toggle('reduce-motion', motionReduced); updateMotion(); });
@@ -163,25 +175,19 @@ function openCart() {
   });
 }
 function openAbout() { openDialog(`<button class="close-dialog" aria-label="Close concept information">×</button>${emblem}<span class="eyebrow">AN ORIGINAL CONCEPT</span><h2>An ocean of<br><em>possibility.</em></h2><p>NERÉA is an original brand and website concept inspired by the ocean. The product, packaging, pack sizes, and prices are illustrative.</p><p>No product reviews, sourcing certifications, or health benefits are claimed. This demo does not process payments or orders.</p><a class="pill dark" href="/product" data-route>Explore the product ${arrow}</a>`, 'about-dialog').querySelector('[data-route]').addEventListener('click', e => { e.preventDefault(); closeDialog(); navigate('/product'); }); }
+function updateSoundControl() {
+  const button = document.querySelector('.sound-toggle');
+  if (button) { button.setAttribute('aria-pressed', String(sound)); button.setAttribute('aria-label', sound ? 'Mute ocean soundtrack' : 'Play ocean soundtrack'); button.querySelector('.sound-label').textContent = sound ? 'SOUND ON' : 'SOUND OFF'; }
+}
 async function toggleSound(value) {
-  if (value) {
-    try {
-      audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); await audioContext.resume();
-      if (!gain) {
-        gain = audioContext.createGain(); gain.gain.value = 0; gain.connect(audioContext.destination);
-        const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 4, audioContext.sampleRate); const data = buffer.getChannelData(0); let last = 0;
-        for (let i = 0; i < data.length; i++) { last = (last + (Math.random() * 2 - 1) * .02) / 1.02; data[i] = last * 3; }
-        const noise = audioContext.createBufferSource(); noise.buffer = buffer; noise.loop = true;
-        const filter = audioContext.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 420; noise.connect(filter); filter.connect(gain); noise.start(); soundNodes.push(noise, filter);
-      }
-      gain.gain.setTargetAtTime(.17, audioContext.currentTime, .8); sound = true;
-    } catch { sound = false; }
-  } else { if (gain) gain.gain.setTargetAtTime(0, audioContext.currentTime, .2); sound = false; }
-  const button = document.querySelector('.sound-toggle'); if (button) { button.setAttribute('aria-pressed', String(sound)); button.setAttribute('aria-label', sound ? 'Disable ambient ocean sound' : 'Enable ambient ocean sound'); button.querySelector('.sound-label').textContent = sound ? 'SOUND ON' : 'SOUND OFF'; }
+  sound = value;
+  updateSoundControl();
+  const enabled = await setMusic(value);
+  if (sound === value) { sound = enabled; updateSoundControl(); }
 }
 let ticking = false;
 addEventListener('scroll', () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; const chapters = [...document.querySelectorAll('.chapter')].map(c => ({top:c.offsetTop,height:c.offsetHeight})), p = progressAt(scrollY, chapters), index = Math.floor(p); document.querySelectorAll('.chapter-nav a').forEach((a, i) => { a.classList.toggle('active', i === index); if (i === index) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current'); }); document.querySelector('.site-header')?.classList.toggle('scrolled', scrollY > 40); const footerTop = document.querySelector('.footer')?.getBoundingClientRect().top ?? innerHeight; document.querySelector('.journey-controls')?.classList.toggle('hidden-controls', footerTop < innerHeight * .9); world?.setActive(footerTop > 0); }); }, { passive: true });
 addEventListener('popstate', () => render());
-document.addEventListener('visibilitychange', () => { if (document.hidden && sound) toggleSound(false); });
+
 render();
 

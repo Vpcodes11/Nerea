@@ -5,7 +5,7 @@ import {buildMarineWorld} from './marine-world.js';
 import {progressAt} from './journey-progress.js';
 
 const clamp=v=>Math.max(0,Math.min(1,v)),smooth=v=>{v=clamp(v);return v*v*(3-2*v);},mix=(a,b,t)=>a+(b-a)*t;
-export function createWorld(container,onReady,onFallback){
+export function createWorld(container,onReady,onFallback,onProgress=()=>{}){
   const params=new URLSearchParams(location.search),studio=params.has('studio'),mobile=()=>innerWidth<700;
   if(studio)container.classList.add('studio-world');
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:studio});}catch{onFallback();return null;}
@@ -160,7 +160,7 @@ export function createWorld(container,onReady,onFallback){
   const motionObserver=new MutationObserver(motionChange);motionObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
   const lost=e=>{e.preventDefault();contextLost=true;active=false;suspend();container.classList.add('lost');onFallback();};
   addEventListener('resize',resize);addEventListener('scroll',wake,{passive:true});addEventListener('pointermove',move,{passive:true});document.addEventListener('visibilitychange',visibility);preference.addEventListener('change',motionChange);renderer.domElement.addEventListener('webglcontextlost',lost);wake();
-  const ready=Promise.all([marine?marine.useScannedRock('/models/ocean-crag.glb').then(()=>marine.useReferenceMountain()):Promise.resolve(),skyReady]);ready.then(()=>{if(!destroyed&&!contextLost){marine?.seatProduct(assets.bottle);assetsReady=true;signature='';renderer.shadowMap.needsUpdate=true;onReady();}}).catch(()=>{if(!destroyed){active=false;container.classList.add('lost');onFallback();}});
+  const ready=Promise.all([marine?marine.useScannedRock('/models/ocean-crag.glb').then(()=>{if(!destroyed)onProgress(62,'Gathering the clouds');return marine.useReferenceMountain();}).then(()=>{if(!destroyed)onProgress(94,'Finding the light');}):Promise.resolve(),skyReady]);ready.then(()=>{if(!destroyed&&!contextLost){marine?.seatProduct(assets.bottle);assetsReady=true;signature='';renderer.shadowMap.needsUpdate=true;onReady();}}).catch(()=>{if(!destroyed){active=false;container.classList.add('lost');onFallback();}});
   ready.then(wake,()=>{});
   return {setActive(v){if(active===v)return;active=v;if(v)wake();else suspend();},refreshLayout(){layout();wake();},inspect(i){selection=i;signature='';wake();},capture(){forceReflection=true;renderer.render(scene,camera);forceReflection=false;return renderer.domElement.toDataURL('image/png');},destroy(){destroyed=true;suspend();removeEventListener('resize',resize);removeEventListener('scroll',wake);removeEventListener('pointermove',move);document.removeEventListener('visibilitychange',visibility);preference.removeEventListener('change',motionChange);motionObserver.disconnect();renderer.domElement.removeEventListener('webglcontextlost',lost);const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());water.material.uniforms.mirrorSampler.value.dispose();waterNormals.dispose();skyTexture.dispose();key.shadow.dispose();depthTarget.dispose();depthMaterial.dispose();assets.dispose();marine?.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
