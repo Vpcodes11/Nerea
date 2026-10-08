@@ -117,7 +117,7 @@ function render() {
     document.querySelectorAll('.chapter').forEach(section => { const frame = document.createElement('div'); frame.className = 'chapter-frame'; frame.append(...section.childNodes); section.append(frame); });
     const container = document.querySelector('#world');
     const params = new URLSearchParams(location.search);
-    if (!enteredOcean && !params.has('poster') && !params.has('studio')) entry = createOceanEntry(enabled => { enteredOcean = true; toggleSound(enabled); world?.startIntro(); });
+    if (!enteredOcean && !params.has('poster') && !params.has('studio')) entry = createOceanEntry(enabled => { enteredOcean = true; toggleSound(enabled); world?.setActive(true); world?.startIntro(); });
     const openingEntry = entry;
     openingEntry?.update(8, 'Opening the horizon');
     const fallback = () => { if (!container.isConnected) return; container.classList.add('static-world'); document.querySelector('#load-status').textContent = 'Static ocean view ready.'; document.querySelector('.scene-status')?.classList.add('ready'); document.body.classList.add('static-mode'); document.querySelectorAll('.feature-story').forEach(p=>{p.hidden=false;p.removeAttribute('aria-hidden');}); openingEntry?.complete(true); };
@@ -128,6 +128,7 @@ function render() {
         if (!container.isConnected) { clearTimeout(timeout); return; }
         openingEntry?.update(22, 'Shaping the water');
         world = createWorld(container, () => { clearTimeout(timeout); container.classList.remove('static-world'); document.body.classList.remove('static-mode'); container.classList.add('world-ready'); world?.refreshLayout(); if (location.hash) requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'instant' })); inspect(Number(document.querySelector('[data-inspect][aria-selected=true]')?.dataset.inspect || 0)); document.querySelector('#load-status').textContent = 'Your ocean is ready.'; document.querySelector('.scene-status')?.classList.add('ready'); openingEntry?.complete(); }, fallback, (value,label) => openingEntry?.update(value,label));
+        if (openingEntry) world?.setActive(false);
         window.nereaCapture = () => world?.capture();
       }).catch(error => { console.error('Unable to initialize the ocean scene:', error); fallback(); });
     }
