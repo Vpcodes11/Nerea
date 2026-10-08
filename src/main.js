@@ -170,18 +170,18 @@ function bindProduct() {
   document.querySelector('.gallery-next').addEventListener('click', () => showGallery((gallery + 1) % 3)); update();
 }
 function persistCart() { try { localStorage.setItem('nerea-cart', JSON.stringify(cart)); } catch {} document.querySelectorAll('.bag-count').forEach(b => b.textContent = cartCount()); }
-let returnFocus;
+let returnFocus, activeOverlay, previousOverlayOverflow;
 function openDialog(content, className = '') {
-  if (!document.querySelector('dialog')) returnFocus = document.activeElement;
-  closeDialog(false);
+  if (activeOverlay) closeDialog(false);
+  else { returnFocus = document.activeElement; previousOverlayOverflow = document.body.style.overflow; }
   const dialog = document.createElement('dialog'); dialog.className = `overlay-dialog ${className}`; dialog.innerHTML = content;
   dialog.setAttribute('aria-label', className === 'cart-drawer' ? 'Shopping bag' : 'About the NERÉA concept');
-  document.body.appendChild(dialog); document.body.style.overflow = 'hidden'; dialog.showModal();
-  dialog.addEventListener('close', () => { if (dialog.isConnected) closeDialog(); });
+  document.body.appendChild(dialog); activeOverlay = dialog; document.body.style.overflow = 'hidden'; dialog.showModal();
+  dialog.addEventListener('close', () => { if (activeOverlay === dialog) closeDialog(); });
   dialog.addEventListener('click', e => { if (e.target === dialog) closeDialog(); });
-  dialog.querySelector('.close-dialog')?.addEventListener('click', closeDialog); return dialog;
+  dialog.querySelector('.close-dialog')?.addEventListener('click', () => closeDialog()); return dialog;
 }
-function closeDialog(restore = true) { const d = document.querySelector('dialog'); if (d) { d.close(); d.remove(); } document.body.style.overflow = ''; if (restore) returnFocus?.focus(); }
+function closeDialog(restore = true) { const dialog = activeOverlay; if (!dialog) return; activeOverlay = null; if (dialog.open) dialog.close(); dialog.remove(); document.body.style.overflow = previousOverlayOverflow; if (restore) returnFocus?.focus(); }
 function openCart() {
   const total = cart.reduce((n, i) => n + price(i.pack) * i.quantity, 0);
   const dialog = openDialog(`<div class="drawer-header"><span class="eyebrow">YOUR DAILY RITUAL</span><button class="close-dialog" aria-label="Close shopping bag">×</button></div><h2>Your <em>bag.</em><span>${cartCount()}</span></h2><div class="cart-items">${cart.length ? cart.map((item, i) => `<div class="cart-item"><img src="/product-render.jpg" alt="NERÉA sea moss bottle"/><div><h3>NERÉA Sea moss</h3><p>${item.pack}-bottle pack · Concept edition</p><div class="cart-item-actions"><button data-cart-minus="${i}" aria-label="Decrease ${item.pack}-bottle pack quantity">−</button><span>${item.quantity}</span><button data-cart-plus="${i}" aria-label="Increase ${item.pack}-bottle pack quantity" ${item.quantity >= 20 ? 'disabled' : ''}>+</button><button class="remove-item" data-remove="${i}">Remove</button></div></div><span>${money(price(item.pack) * item.quantity)}</span></div>`).join('') : `<div class="empty-bag">${emblem}<p>A little room for<br><em>your next ritual.</em></p><button class="pill dark cart-discover">Discover sea moss ${arrow}</button></div>`}</div>${cart.length ? `<div class="cart-total"><span>Sample subtotal</span><strong>${money(total)}</strong></div><button class="pill dark demo-checkout">Explore demo checkout ${arrow}</button>` : ''}<p class="demo-note">This is a concept store. Prices are illustrative.<br>No payment is collected and no order is placed.</p>`, 'cart-drawer');

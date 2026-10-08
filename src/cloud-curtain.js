@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-// A screen-filling pass through cloud, tied directly to scroll progress. The
-// borrowed smoke texture is owned and disposed by the spatial atmosphere.
+// A screen-filling pass through cloud that clears at the coastal chapter.
+// The borrowed smoke texture is owned and disposed by the spatial atmosphere.
 export function buildCloudCurtain(scene) {
   let disposed = false;
   let mainCamera;
@@ -59,9 +59,9 @@ export function buildCloudCurtain(scene) {
       }
 
       void main() {
-        if (cameraVisible < .5 || progress <= .10 || progress >= 1.5) discard;
+        if (cameraVisible < .5 || progress <= .10 || progress >= 1.) discard;
         float arrival = smoothstep(.10, .88, progress);
-        float departure = smoothstep(1.10, 1.50, progress);
+        float departure = smoothstep(.94, 1.00, progress);
         float life = smoothstep(.10, .76, progress) * (1. - departure);
         float drift = time * .004;
         // Ten distinct, overlapping masses sweep in from both sides and below.
@@ -81,11 +81,11 @@ export function buildCloudCurtain(scene) {
 
         // An opaque, textured interior guarantees no world pixels leak through
         // at the end of the approach, including the corners of ultrawide views.
-        float interior = smoothstep(.80, .88, progress) * (1. - smoothstep(1.10, 1.48, progress));
+        float interior = smoothstep(.80, .88, progress) * (1. - departure);
         float radius = length((vUv - vec2(.5)) * vec2(aspect, 1.));
-        float opening = smoothstep(1.10, 1.50, progress);
+        float opening = departure;
         float clearCenter = 1. - smoothstep(opening * 1.3 - .15, opening * 1.3 + .18, radius);
-        interior *= 1. - clearCenter * smoothstep(1.10, 1.36, progress);
+        interior *= 1. - clearCenter * smoothstep(.94, .99, progress);
         float alpha = max(texturedAlpha, interior);
         if (alpha < .002) discard;
 
@@ -125,10 +125,10 @@ export function buildCloudCurtain(scene) {
     update(progress, time, aspect = 1, camera) {
       if (disposed) return;
       if (camera) mainCamera = camera;
-      uniforms.progress.value = THREE.MathUtils.clamp(progress, 0, 1.5);
+      uniforms.progress.value = THREE.MathUtils.clamp(progress, 0, 1);
       uniforms.time.value = time;
       uniforms.aspect.value = Math.max(.25, aspect);
-      mesh.visible = Boolean(uniforms.cloudMask.value) && progress > .10 && progress < 1.5;
+      mesh.visible = Boolean(uniforms.cloudMask.value) && progress > .10 && progress < 1;
     },
     captureDepth(hide) {
       if (hide) {
